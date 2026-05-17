@@ -1,12 +1,15 @@
 import asyncio
 import json
+import random
 import pandas as pd
 
 from playwright.async_api import async_playwright
 
 POST_URL = "https://www.instagram.com/p/DO6EIPujOYw/?img_index=1"
 
-comments_data = []
+TARGET = 1000
+
+all_comments = []
 
 
 async def main():
@@ -14,14 +17,15 @@ async def main():
     async with async_playwright() as p:
 
         browser = await p.chromium.launch(
-            headless=False
+            headless=False,
+            slow_mo=500
         )
 
         context = await browser.new_context()
 
-        # =========================
+        # ===================================
         # LOAD COOKIES
-        # =========================
+        # ===================================
 
         with open("instagram_cookies.json", "r", encoding="utf-8") as f:
             raw_cookies = json.load(f)
@@ -57,57 +61,11 @@ async def main():
 
         page = await context.new_page()
 
-        # =========================
-        # RESPONSE INTERCEPTOR
-        # =========================
-
-        async def handle_response(response):
-
-            try:
-
-                url = response.url
-
-                # endpoint komentar instagram
-                if "comments" in url:
-
-                    print("\nFOUND COMMENTS API")
-
-                    data = await response.json()
-
-                    # DEBUG
-                    print(data.keys())
-
-                    # parsing comment
-                    if "comments" in data:
-
-                        for item in data["comments"]:
-
-                            try:
-
-                                username = item["user"]["username"]
-
-                                comment = item["text"]
-
-                                comments_data.append({
-                                    "username": username,
-                                    "comment": comment
-                                })
-
-                                print(username, ":", comment[:40])
-
-                            except:
-                                pass
-
-            except:
-                pass
-
-        page.on("response", handle_response)
-
-        # =========================
+        # ===================================
         # OPEN POST
-        # =========================
+        # ===================================
 
-        print("Opening post...")
+        print("Opening Instagram post...")
 
         await page.goto(
             POST_URL,
@@ -125,23 +83,186 @@ async def main():
 
         print("Login success")
 
-        # =========================
-        # AUTO SCROLL
-        # =========================
+        # ===================================
+        # CLICK COMMENT AREA
+        # ===================================
 
-        for i in range(30):
+        await page.mouse.wheel(0, 2500)
 
-            print(f"Scrolling {i+1}")
+        await page.wait_for_timeout(5000)
 
-            await page.mouse.wheel(0, 8000)
+        # ===================================
+        # FIND COMMENT SCROLL CONTAINER
+        # ===================================
 
-            await page.wait_for_timeout(3000)
+        comment_container = await page.query_selector(
+            'div[style*="overflow"]'
+        )
 
-        # =========================
-        # SAVE DATA
-        # =========================
+        if not comment_container:
 
-        df = pd.DataFrame(comments_data)
+            print("Comment container not found")
+            return
+
+        print("Comment container found")
+
+        # ===================================
+        # SCRAPING LOOP
+        # ===================================
+
+        last_count = 0
+        same_count = 0
+
+        for i in range(100):
+
+            print(f"\nSCROLL ITERATION {i+1}")
+
+            # ===============================
+            # CLICK MORE COMMENTS BUTTON
+            # ===============================
+
+            buttons = await page.query_selector_all("button")
+
+            for btn in buttons:
+
+                try:
+
+                    text = await btn.inner_text()
+
+                    text = text.lower()
+
+                    if (
+                        "more comments" in text
+                        or "view replies" in text
+                        or "lihat komentar lainnya" in text
+                        or "lihat balasan" in text
+                    ):
+
+                        print("CLICK:", text)
+
+                        await btn.click()
+
+                        await page.wait_for_timeout(
+                            random.randint(1000, 2500)
+                        )
+
+                except:
+                    pass
+
+            # ===============================
+            # SCROLL COMMENT CONTAINER
+            # ===============================
+
+            try:
+
+                await comment_container.evaluate(
+                    """
+                    (el) => {
+                        el.scrollTop = el.scrollHeight;
+                    }
+                    """
+                )
+
+            except Exception as e:
+
+                print("Scroll error:", e)
+
+            await page.wait_for_timeout(
+                random.randint(3000, 5000)
+            )
+
+            # ===============================
+            # GET COMMENTS
+            # ===============================
+
+            comments = await page.query_selector_all("ul li")
+
+            current_count = len(comments)
+
+            print("Collected:", current_count)
+
+            # ===============================
+            # STOP CONDITION
+            # ===============================
+
+            if current_count >= TARGET:
+
+                print("TARGET REACHED")
+                break
+
+            if current_count == last_count:
+                same_count += 1
+            else:
+                same_count = 0
+
+            if same_count >= 5:
+
+                print("NO NEW COMMENTS")
+                break
+
+            last_count = current_count
+
+        # ===================================
+        # EXTRACTION
+        # ===================================
+
+        print("\nEXTRACTING DATA")
+
+        comments = await page.query_selector_all("ul li")
+
+        print("TOTAL ELEMENTS:", len(comments))
+
+        for c in comments:
+
+            try:
+
+                username_el = await c.query_selector("a")
+
+                spans = await c.query_selector_all("span")
+
+                if not username_el:
+                    continue
+
+                username = await username_el.inner_text()
+
+                comment_text = ""
+
+                for s in spans:
+
+                    try:
+
+                        txt = await s.inner_text()
+
+                        txt = txt.strip()
+
+                        if (
+                            txt
+                            and txt != username
+                            and len(txt) > 2
+                        ):
+
+                            comment_text = txt
+                            break
+
+                    except:
+                        pass
+
+                if comment_text:
+
+                    all_comments.append({
+                        "username": username,
+                        "comment": comment_text
+                    })
+
+            except Exception as e:
+
+                print("Extract error:", e)
+
+        # ===================================
+        # SAVE CSV
+        # ===================================
+
+        df = pd.DataFrame(all_comments)
 
         df.drop_duplicates(inplace=True)
 
@@ -153,6 +274,8 @@ async def main():
 
         print("\nFINAL RESULT")
         print(df.shape)
+
+        print("\nCSV SAVED")
 
         await browser.close()
 
