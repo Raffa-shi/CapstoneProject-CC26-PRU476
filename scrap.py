@@ -18,7 +18,10 @@ async def main():
 
         browser = await p.chromium.launch(
             headless=False,
-            slow_mo=300
+            slow_mo=300,
+            args=[
+                "--disable-blink-features=AutomationControlled"
+            ]
         )
 
         context = await browser.new_context()
@@ -49,9 +52,13 @@ async def main():
                 }
 
                 if cookie.get("expirationDate"):
-                    clean_cookie["expires"] = int(
-                        cookie["expirationDate"]
-                    )
+
+                    try:
+                        clean_cookie["expires"] = int(
+                            cookie["expirationDate"]
+                        )
+                    except:
+                        pass
 
                 clean_cookies.append(clean_cookie)
 
@@ -85,7 +92,7 @@ async def main():
         print("LOGIN SUCCESS")
 
         # ==========================================
-        # SCROLL KE AREA KOMENTAR
+        # SCROLL TO COMMENT AREA
         # ==========================================
 
         await page.mouse.wheel(0, 2500)
@@ -93,22 +100,7 @@ async def main():
         await page.wait_for_timeout(5000)
 
         # ==========================================
-        # AMBIL CONTAINER KOMENTAR
-        # ==========================================
-
-        comment_container = await page.query_selector(
-            'article section + div'
-        )
-
-        if not comment_container:
-
-            print("COMMENT CONTAINER NOT FOUND")
-            return
-
-        print("COMMENT CONTAINER FOUND")
-
-        # ==========================================
-        # LOOP LOAD KOMENTAR
+        # LOAD COMMENTS
         # ==========================================
 
         last_count = 0
@@ -119,7 +111,7 @@ async def main():
             print(f"\nITERATION {i+1}")
 
             # ======================================
-            # CLICK MORE COMMENTS
+            # CLICK MORE COMMENTS BUTTON
             # ======================================
 
             buttons = await page.query_selector_all("button")
@@ -145,42 +137,34 @@ async def main():
                         await btn.click()
 
                         await page.wait_for_timeout(
-                            random.randint(1000, 2000)
+                            random.randint(1000, 2500)
                         )
 
                 except:
                     pass
 
             # ======================================
-            # SCROLL PANEL KOMENTAR
+            # SCROLL COMMENT PANEL
             # ======================================
 
-            try:
-
-                await comment_container.hover()
-
-                await page.mouse.wheel(
-                    0,
-                    random.randint(4000, 7000)
-                )
-
-            except Exception as e:
-
-                print("SCROLL ERROR:", e)
+            await page.mouse.wheel(
+                0,
+                random.randint(5000, 9000)
+            )
 
             await page.wait_for_timeout(
                 random.randint(3000, 5000)
             )
 
             # ======================================
-            # AMBIL COMMENT BLOCK
+            # COUNT COMMENT BLOCKS
             # ======================================
 
-            comments = await page.query_selector_all(
-                "article ul ul"
+            comment_blocks = await page.query_selector_all(
+                'article div > span'
             )
 
-            current_count = len(comments)
+            current_count = len(comment_blocks)
 
             print("COLLECTED:", current_count)
 
@@ -205,23 +189,23 @@ async def main():
         # EXTRACTION
         # ==========================================
 
-        print("\nEXTRACTING")
+        print("\nEXTRACTING COMMENTS")
 
-        comments = await page.query_selector_all(
-            "article ul ul"
+        comment_blocks = await page.query_selector_all(
+            'article ul li'
         )
 
-        print("TOTAL:", len(comments))
+        print("TOTAL BLOCKS:", len(comment_blocks))
 
-        for c in comments:
+        for idx, block in enumerate(comment_blocks):
 
             try:
 
-                text = await c.inner_text()
+                raw_text = await block.inner_text()
 
                 lines = [
                     x.strip()
-                    for x in text.split("\n")
+                    for x in raw_text.split("\n")
                     if x.strip()
                 ]
 
@@ -231,7 +215,7 @@ async def main():
                 username = lines[0]
                 comment = lines[1]
 
-                invalid = [
+                invalid_words = [
                     "reply",
                     "replies",
                     "like",
@@ -243,18 +227,25 @@ async def main():
 
                 if any(
                     x in comment.lower()
-                    for x in invalid
+                    for x in invalid_words
                 ):
                     continue
 
-                all_comments.append({
-                    "username": username,
-                    "comment": comment
-                })
+                if (
+                    username
+                    and comment
+                    and username != comment
+                    and len(comment) > 1
+                ):
 
-                print(
-                    f"SAVED {len(all_comments)} -> {username}"
-                )
+                    all_comments.append({
+                        "username": username,
+                        "comment": comment
+                    })
+
+                    print(
+                        f"SAVED {len(all_comments)} -> {username}"
+                    )
 
             except Exception as e:
 
