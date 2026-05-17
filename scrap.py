@@ -18,39 +18,40 @@ async def main():
 
         browser = await p.chromium.launch(
             headless=False,
-            slow_mo=500
+            slow_mo=300
         )
 
         context = await browser.new_context()
 
-        # ===================================
+        # ==========================================
         # LOAD COOKIES
-        # ===================================
+        # ==========================================
 
-        with open("instagram_cookies.json", "r", encoding="utf-8") as f:
-            raw_cookies = json.load(f)
+        with open(
+            "instagram_cookies.json",
+            "r",
+            encoding="utf-8"
+        ) as f:
+
+            cookies = json.load(f)
 
         clean_cookies = []
 
-        for cookie in raw_cookies:
+        for cookie in cookies:
 
             try:
 
                 clean_cookie = {
-                    "name": cookie.get("name"),
-                    "value": cookie.get("value"),
-                    "domain": cookie.get("domain"),
-                    "path": cookie.get("path", "/"),
+                    "name": cookie["name"],
+                    "value": cookie["value"],
+                    "domain": cookie["domain"],
+                    "path": cookie.get("path", "/")
                 }
 
                 if cookie.get("expirationDate"):
-
-                    try:
-                        clean_cookie["expires"] = int(
-                            cookie["expirationDate"]
-                        )
-                    except:
-                        pass
+                    clean_cookie["expires"] = int(
+                        cookie["expirationDate"]
+                    )
 
                 clean_cookies.append(clean_cookie)
 
@@ -59,13 +60,13 @@ async def main():
 
         await context.add_cookies(clean_cookies)
 
+        # ==========================================
+        # OPEN PAGE
+        # ==========================================
+
         page = await context.new_page()
 
-        # ===================================
-        # OPEN POST
-        # ===================================
-
-        print("Opening Instagram post...")
+        print("OPENING POST")
 
         await page.goto(
             POST_URL,
@@ -74,52 +75,52 @@ async def main():
 
         await page.wait_for_timeout(10000)
 
-        print("Current URL:", page.url)
+        print(page.url)
 
         if "login" in page.url:
 
-            print("Cookies invalid")
+            print("COOKIES INVALID")
             return
 
-        print("Login success")
+        print("LOGIN SUCCESS")
 
-        # ===================================
-        # CLICK COMMENT AREA
-        # ===================================
+        # ==========================================
+        # SCROLL KE AREA KOMENTAR
+        # ==========================================
 
         await page.mouse.wheel(0, 2500)
 
         await page.wait_for_timeout(5000)
 
-        # ===================================
-        # FIND COMMENT SCROLL CONTAINER
-        # ===================================
+        # ==========================================
+        # AMBIL CONTAINER KOMENTAR
+        # ==========================================
 
         comment_container = await page.query_selector(
-            'div[style*="overflow"]'
+            'article section + div'
         )
 
         if not comment_container:
 
-            print("Comment container not found")
+            print("COMMENT CONTAINER NOT FOUND")
             return
 
-        print("Comment container found")
+        print("COMMENT CONTAINER FOUND")
 
-        # ===================================
-        # SCRAPING LOOP
-        # ===================================
+        # ==========================================
+        # LOOP LOAD KOMENTAR
+        # ==========================================
 
         last_count = 0
         same_count = 0
 
         for i in range(100):
 
-            print(f"\nSCROLL ITERATION {i+1}")
+            print(f"\nITERATION {i+1}")
 
-            # ===============================
-            # CLICK MORE COMMENTS BUTTON
-            # ===============================
+            # ======================================
+            # CLICK MORE COMMENTS
+            # ======================================
 
             buttons = await page.query_selector_all("button")
 
@@ -127,14 +128,15 @@ async def main():
 
                 try:
 
-                    text = await btn.inner_text()
-
-                    text = text.lower()
+                    text = (
+                        await btn.inner_text()
+                    ).lower().strip()
 
                     if (
                         "more comments" in text
-                        or "view replies" in text
+                        or "load more comments" in text
                         or "lihat komentar lainnya" in text
+                        or "view replies" in text
                         or "lihat balasan" in text
                     ):
 
@@ -143,47 +145,44 @@ async def main():
                         await btn.click()
 
                         await page.wait_for_timeout(
-                            random.randint(1000, 2500)
+                            random.randint(1000, 2000)
                         )
 
                 except:
                     pass
 
-            # ===============================
-            # SCROLL COMMENT CONTAINER
-            # ===============================
+            # ======================================
+            # SCROLL PANEL KOMENTAR
+            # ======================================
 
             try:
 
-                await comment_container.evaluate(
-                    """
-                    (el) => {
-                        el.scrollTop = el.scrollHeight;
-                    }
-                    """
+                await comment_container.hover()
+
+                await page.mouse.wheel(
+                    0,
+                    random.randint(4000, 7000)
                 )
 
             except Exception as e:
 
-                print("Scroll error:", e)
+                print("SCROLL ERROR:", e)
 
             await page.wait_for_timeout(
                 random.randint(3000, 5000)
             )
 
-            # ===============================
-            # GET COMMENTS
-            # ===============================
+            # ======================================
+            # AMBIL COMMENT BLOCK
+            # ======================================
 
-            comments = await page.query_selector_all("ul li")
+            comments = await page.query_selector_all(
+                "article ul ul"
+            )
 
             current_count = len(comments)
 
-            print("Collected:", current_count)
-
-            # ===============================
-            # STOP CONDITION
-            # ===============================
+            print("COLLECTED:", current_count)
 
             if current_count >= TARGET:
 
@@ -202,65 +201,68 @@ async def main():
 
             last_count = current_count
 
-        # ===================================
+        # ==========================================
         # EXTRACTION
-        # ===================================
+        # ==========================================
 
-        print("\nEXTRACTING DATA")
+        print("\nEXTRACTING")
 
-        comments = await page.query_selector_all("ul li")
+        comments = await page.query_selector_all(
+            "article ul ul"
+        )
 
-        print("TOTAL ELEMENTS:", len(comments))
+        print("TOTAL:", len(comments))
 
         for c in comments:
 
             try:
 
-                username_el = await c.query_selector("a")
+                text = await c.inner_text()
 
-                spans = await c.query_selector_all("span")
+                lines = [
+                    x.strip()
+                    for x in text.split("\n")
+                    if x.strip()
+                ]
 
-                if not username_el:
+                if len(lines) < 2:
                     continue
 
-                username = await username_el.inner_text()
+                username = lines[0]
+                comment = lines[1]
 
-                comment_text = ""
+                invalid = [
+                    "reply",
+                    "replies",
+                    "like",
+                    "liked",
+                    "follow",
+                    "following",
+                    "see translation"
+                ]
 
-                for s in spans:
+                if any(
+                    x in comment.lower()
+                    for x in invalid
+                ):
+                    continue
 
-                    try:
+                all_comments.append({
+                    "username": username,
+                    "comment": comment
+                })
 
-                        txt = await s.inner_text()
-
-                        txt = txt.strip()
-
-                        if (
-                            txt
-                            and txt != username
-                            and len(txt) > 2
-                        ):
-
-                            comment_text = txt
-                            break
-
-                    except:
-                        pass
-
-                if comment_text:
-
-                    all_comments.append({
-                        "username": username,
-                        "comment": comment_text
-                    })
+                print(
+                    f"SAVED {len(all_comments)} -> {username}"
+                )
 
             except Exception as e:
 
-                print("Extract error:", e)
+                print("EXTRACT ERROR:", e)
 
-        # ===================================
+        # ==========================================
         # SAVE CSV
-        # ===================================
+        # ==========================================
 
         df = pd.DataFrame(all_comments)
 
@@ -275,7 +277,7 @@ async def main():
         print("\nFINAL RESULT")
         print(df.shape)
 
-        print("\nCSV SAVED")
+        print("CSV SAVED")
 
         await browser.close()
 
