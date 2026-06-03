@@ -6,3 +6,5 @@ nltk
 instaloader
 asyncio
 playwright
+joblib
+request
