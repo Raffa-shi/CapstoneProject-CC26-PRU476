@@ -3,8 +3,12 @@ numpy
 scikit-learn
 matplotlib
 nltk
-instaloader
-asyncio
-playwright
 joblib
 request
+json
+PySastrawi
+wordcloud
+seaborn
+plotly
+gensim
+streamlit
