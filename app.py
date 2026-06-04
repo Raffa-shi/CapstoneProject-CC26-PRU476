@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from wordcloud import WordCloud
 from collections import Counter
+from utils.preprocessor import full_preprocessing
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -416,11 +417,8 @@ def load_data():
 
 @st.cache_resource
 def load_preprocessor():
-    import sys
-    sys.path.insert(0, 'utils')
-    from preprocessor import full_preprocessing
+    from utils.preprocessor import full_preprocessing
     return full_preprocessing
-
 try:
     model, vectorizer, encoder = load_model()
     df, wc_data, stats         = load_data()

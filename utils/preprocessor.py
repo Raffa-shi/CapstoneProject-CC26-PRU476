@@ -9,8 +9,8 @@ nltk.download("punkt",     quiet=True)
 nltk.download("punkt_tab", quiet=True)
 
 # Inisialisasi Stemmer dan Stopword
-factory_stemmer    = StemmerFactory()
-stemmer            = factory_stemmer.createStemmer()
+factory_stemmer = StemmerFactory()
+stemmer = factory_stemmer.create_stemmer()
 
 factory_stop       = StopWordRemoverFactory()
 sastrawi_stopwords = set(factory_stop.get_stop_words())
