@@ -13,9 +13,8 @@ from collections import Counter
 import warnings
 warnings.filterwarnings('ignore')
 
-# ============================================================
+
 # CONFIG
-# ============================================================
 
 st.set_page_config(
     page_title="BPJS Sentiment Analyzer",
@@ -24,9 +23,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ============================================================
 # THEME & CSS
-# ============================================================
+
 
 st.markdown("""
 <style>
@@ -396,9 +394,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================================
+
 # LOAD RESOURCES
-# ============================================================
+
 
 @st.cache_resource
 def load_model():
@@ -432,9 +430,9 @@ except Exception as e:
     MODEL_LOADED = False
     load_error   = str(e)
 
-# ============================================================
+
 # SESSION STATE
-# ============================================================
+
 
 if 'history' not in st.session_state:
     st.session_state.history = []
