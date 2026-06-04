@@ -925,9 +925,7 @@ with tab3:
             st.pyplot(fig_cust, use_container_width=True)
             plt.close()
 
-# ============================================================
 # TAB 4 — TECH STACK & MODEL INFO
-# ============================================================
 
 with tab4:
     # Tech Stack
