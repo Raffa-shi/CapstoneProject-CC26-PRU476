@@ -160,7 +160,7 @@ Normalization
 Tokenization
       
 Stopword Removal
-      ↓
+      
 Stemming
 ```
 
@@ -205,9 +205,9 @@ Mengubah teks menjadi representasi numerik berdasarkan bobot kata.
 
 ```text
 Komentar
-      ↓
+      
 TF-IDF
-      ↓
+      
 Feature Vector
 ```
 
