@@ -111,9 +111,9 @@ Scraping komentar Instagram menggunakan Selenium.
 
 ```text
 Instagram Post
-      ↓
+      
 Comment Scraping
-      ↓
+      
 Raw Dataset
 ```
 
@@ -140,25 +140,25 @@ Raw Dataset
 
 ```text
 Case Folding
-      ↓
+      
 Remove URL
-      ↓
+      
 Remove Mention
-      ↓
+      
 Remove Hashtag
-      ↓
+      
 Remove Emoji
-      ↓
+      
 Remove Number
-      ↓
+      
 Remove Punctuation
-      ↓
+      
 Remove Extra Whitespace
-      ↓
+      
 Normalization
-      ↓
+      
 Tokenization
-      ↓
+      
 Stopword Removal
       ↓
 Stemming
@@ -244,9 +244,9 @@ Model yang telah dilatih disimpan menggunakan Joblib dan diintegrasikan ke dalam
 
 ```text
 Model (.pkl)
-      ↓
+      
 Streamlit Dashboard
-      ↓
+      
 Real-Time Sentiment Prediction
 ```
 
@@ -283,7 +283,7 @@ Menampilkan:
 
 | Model | Accuracy |
 |---------|---------|
-| Naive Bayes | 67% |
+| Naive Bayes | 71% |
 | SVM Linear | 78% |
 
 SVM dipilih sebagai model utama karena memiliki performa terbaik pada dataset komentar Instagram BPJS Kesehatan.
@@ -335,4 +335,4 @@ http://localhost:8501
 
 ## License
 
-This project was developed for educational and research purposes as part of the Capstone Project Program.
+This project was developed for educational and research purposes as part of the Capstone Project Dicoding Program.
