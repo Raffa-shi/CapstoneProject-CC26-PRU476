@@ -17,10 +17,8 @@ import nltk
 nltk.download('punkt', quiet=True)
 nltk.download('punkt_tab', quiet=True)
 
-# ============================================================
-# PAGE CONFIG
-# ============================================================
 
+# PAGE CONFIG
 st.set_page_config(
     page_title="BPJS Sentiment Analyzer",
     page_icon="https://www.bpjs-kesehatan.go.id/bpjs/assets/images/logo_baru.png",
@@ -28,14 +26,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ============================================================
-# CSS — Font Awesome + BPJS Theme (ZERO emoji)
-# ============================================================
 
+# CSS — Font Awesome + BPJS Theme (ZERO emoji)
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
-@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css');
+
 
 :root {
     --green:      #00a651;
@@ -915,10 +911,10 @@ with tab1:
                 else:
                     css = sent_css(lbl)
                     icon_fa = {
-                        'Positif': '😊',
-                        'Netral':  '😐',
-                        'Negatif': '😠',
-                    }.get(lbl, '😐')
+                        'Positif': '<i class="a">😊</i>',
+                        'Netral':  '<i class="a">😐</i>',
+                        'Negatif': '<i class="a">😠</i>',
+                    }.get(lbl, '<i class="a">😐</i>')
 
                     st.markdown(f"""
                     <div class="pred-wrap {css}">
@@ -991,7 +987,6 @@ with tab1:
 
 
 # TAB 2 — ANALITIK
-
 with tab2:
     sec("Ringkasan Dataset")
 
@@ -1145,10 +1140,7 @@ with tab2:
             }
         )
 
-# ============================================================
 # TAB 3 — WORD CLOUD
-# ============================================================
-
 with tab3:
     sec("Word Cloud per Kelas Sentimen")
     st.markdown("""
@@ -1224,10 +1216,8 @@ with tab3:
             plt.close()
             st.markdown("</div></div>", unsafe_allow_html=True)
 
-# ============================================================
-# TAB 4 — TECH STACK & MODEL
-# ============================================================
 
+# TAB 4 — TECH STACK & MODEL
 with tab4:
     sec("Tech Stack")
     st.markdown("""
@@ -1294,8 +1284,6 @@ with tab4:
     with pc1:
         st.markdown("""
         <div class="card">
-        <p style="font-size:0.72rem;font-weight:600;text-transform:uppercase;
-                  letter-spacing:0.9px;color:var(--muted);margin:0 0 4px">Model Tersedia</p>
         """, unsafe_allow_html=True)
 
         svm_acc = stats.get('svm_accuracy', acc_svm) if MODEL_OK else acc_svm
@@ -1312,8 +1300,8 @@ with tab4:
             <thead>
                 <tr>
                     <th>Metrik</th>
-                    <th>TF-IDF + SVM <span class="winner-badge">TERBAIK</span></th>
-                    <th>TF-IDF + NB</th>
+                    <th>TF-IDF + Support Vector Machine <span class="winner-badge">TERBAIK</span></th>
+                    <th>TF-IDF + Naive Bayes</th>
                 </tr>
             </thead>
             <tbody>
